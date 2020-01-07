@@ -2706,17 +2706,28 @@ Runner.prototype = {
       }
 
       // Check for collisions.
+      var nearCollision = hasObstacles &&
+          checkForNearCollision(this.horizon.obstacles[0], this.tRex);
+
       var collision = hasObstacles &&
           checkForCollision(this.horizon.obstacles[0], this.tRex);
 
-      if (!collision) {
+      if (!nearCollision) {
         this.distanceRan += this.currentSpeed * deltaTime / this.msPerFrame;
 
         if (this.currentSpeed < this.config.MAX_SPEED) {
           this.currentSpeed += this.config.ACCELERATION;
         }
-      } else {
+      } 
+      else if(collision){
+        this.gameOver();
+        this.playSound(this.soundFx.BUTTON_PRESS);
+      }
+      else {
         //this.gameOver();
+        //this.playSound(this.soundFx.BUTTON_PRESS);
+        this.tRex.startJump(this.currentSpeed);
+
       }
 
       var playAchievementSound = this.distanceMeter.update(deltaTime,
@@ -2838,10 +2849,8 @@ Runner.prototype = {
           }
           // Start jump.
           if (!this.tRex.jumping && !this.tRex.ducking) {
-            
             this.playSound(this.soundFx.BUTTON_PRESS);
             this.tRex.startJump(this.currentSpeed);
-            
           }
         } else if (this.playing && Runner.keycodes.DUCK[e.keyCode]) {
           e.preventDefault();
@@ -3360,6 +3369,59 @@ GameOverPanel.prototype = {
  *    collision boxes.
  * @return {Array<CollisionBox>}
  */
+function checkForNearCollision(obstacle, tRex, opt_canvasCtx) {
+  var obstacleBoxXPos = Runner.defaultDimensions.WIDTH + obstacle.xPos;
+
+  // Adjustments are made to the bounding box as there is a 1 pixel white
+  // border around the t-rex and obstacles.
+  var tRexBox = new CollisionBox(
+      tRex.xPos + 52,
+      tRex.yPos + 1,
+      tRex.config.WIDTH - 2,
+      tRex.config.HEIGHT - 2);
+
+  var obstacleBox = new CollisionBox(
+      obstacle.xPos + 1,
+      obstacle.yPos + 1,
+      obstacle.typeConfig.width * obstacle.size - 2,
+      obstacle.typeConfig.height - 2);
+
+  // Debug outer box
+  if (opt_canvasCtx) {
+    drawCollisionBoxes(opt_canvasCtx, tRexBox, obstacleBox);
+  }
+
+  // Simple outer bounds check.
+  if (boxCompare(tRexBox, obstacleBox)) {
+    var collisionBoxes = obstacle.collisionBoxes;
+    var tRexCollisionBoxes = tRex.ducking ?
+        Trex.collisionBoxes.DUCKING : Trex.collisionBoxes.RUNNING;
+
+    // Detailed axis aligned box check.
+    for (var t = 0; t < tRexCollisionBoxes.length; t++) {
+      for (var i = 0; i < collisionBoxes.length; i++) {
+        // Adjust the box to actual positions.
+        var adjTrexBox =
+            createAdjustedCollisionBox(tRexCollisionBoxes[t], tRexBox);
+        var adjObstacleBox =
+            createAdjustedCollisionBox(collisionBoxes[i], obstacleBox);
+        var crashed = boxCompare(adjTrexBox, adjObstacleBox);
+
+        // Draw boxes for debug.
+        if (opt_canvasCtx) {
+          drawCollisionBoxes(opt_canvasCtx, adjTrexBox, adjObstacleBox);
+        }
+
+        if (crashed) {
+          return [adjTrexBox, adjObstacleBox];
+        }
+      }
+    }
+  }
+  return false;
+};
+
+
 function checkForCollision(obstacle, tRex, opt_canvasCtx) {
   var obstacleBoxXPos = Runner.defaultDimensions.WIDTH + obstacle.xPos;
 
