@@ -2834,19 +2834,6 @@ Runner.prototype = {
         if (Runner.keycodes.JUMP[e.keyCode] ||
             e.type == Runner.events.TOUCHSTART) {
           e.preventDefault();
-          // Starting the game for the first time.
-          if (!this.playing) {
-            // Started by touch so create a touch controller.
-            
-            /**
-            this.loadSounds();
-            this.setPlayStatus(true);
-            this.update();
-            if (window.errorPageController) {
-              errorPageController.trackEasterEgg();
-            }
-            **/
-          }
           // Start jump.
           if (!this.tRex.jumping && !this.tRex.ducking) {
             this.playSound(this.soundFx.BUTTON_PRESS);
@@ -5530,18 +5517,6 @@ function LoadTimeData(){}
 // line of the file is source code (so the first line would be skipped) instead
 // of a licence header.
 // clang-format off
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   document.firstElementChild.classList.add('offline');
